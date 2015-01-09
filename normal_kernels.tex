@@ -1,0 +1,122 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Inner Product Kernel}\label{subsec:ip-kernel}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Given that the Euclidean inner product is well defined for normals, as described in (\ref{eq:3d-inner-product}), we can define a kernel of the form
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{equation}\label{eq:ip-cosine-kernel}
+    k(\boldsymbol{x}_i, \boldsymbol{x}_j) = \sum^K_k {\boldsymbol{n}_k^i}^T \boldsymbol{n}_k^j = \sum^K_k \cos \alpha^{ij}_k
+\end{equation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+where $\alpha^{ij}_k = \langle \boldsymbol{n}^i_k, \boldsymbol{n}^j_k \rangle$.
+
+Subtracting the mean would affect the calculation of the cosine and thus would not preserve the cosine distance. Therefore, we note that the inner product mapping is equivalent to performing PCA without subtracting the mean. We refer to this kernel as the inner product (IP) kernel, and denote it as:
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{equation}\label{eq:ip-kernel}
+    \ip = \boldsymbol{x}_k
+\end{equation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+We can explicitly define the inverse mapping for the inner product as the normalisation of each individual normal within the feature space vector, $\boldsymbol{v}_k$:
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{equation}\label{eq:inv-ip-kernel}
+    \invip = \left[ x_k^1, y_k^1, z_k^1, \ldots, x_k^N, y_k^N, z_k^N \right]^T
+\end{equation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+After computing $\ip$, we estimate $\boldsymbol{U}_{IP}$ from (\ref{eq:feature-space-pca}) and set $\boldsymbol{M} = \boldsymbol{I}$. Reconstruction of a test vector of normals $\boldsymbol{x}$ is performed via
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{equation}\label{eq:ip-reconstruction}
+   \tilde{\boldsymbol{x}} = {\Phi_{IP}}^{-1} \left( \boldsymbol{U}_{IP} {\boldsymbol{U}_{IP}}^T \Phi_{IP}(\boldsymbol{x}) \right)
+\end{equation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{AEP Kernel}\label{subsec:aep-kernel}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+The azimuthal equidistant projection (AEP) \cite{RefWorks:102,RefWorks:90} is a cartographic projection often used for creating charts centred on the north pole. The projection has the useful property that all lines that pass through the centre of the projection represent geodesics on the surface of a sphere. The projection is constructed at a point $P$ on the surface of a sphere by projecting a local neighbourhood of points around $P$ onto the tangent plane defined at $P$. In terms of normals, we construct the projection by calculating the average normal across the training set at each point, and then projecting each normal on to this tangent plane. This means that the local coordinate system at each point is mean-centred according to the total distribution.
+
+The AEP takes each normal, $\boldsymbol{n}_k^i$ and maps it to a new location on a tangent plane, $\boldsymbol{v}_k^i = [\bar{x}_k^i, \bar{y}_k^i]^T$. The inverse AEP takes the points  $v_k^i$ on the tangent plane and maps them back to normals. For a more detailed derivation of the Azimuthal Equidistant Projection, we invite the reader to consult Smith's paper \cite{RefWorks:90}. Assuming each normal has been projected to its tangent plane according to the AEP function, we define the AEP mapping function as
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{equation}\label{eq:aep-kernel}
+    \aep = \left[ \bar{x}_k^1, \bar{y}_k^1, \ldots, \bar{x}_k^N, \bar{y}_k^N \right]^T
+\end{equation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+and also explicitly define the inverse mapping function
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{equation}\label{eq:inv-aep-kernel}
+    \invaep = \left[ x_k^1, y_k^1, z_k^1, \dots, x_k^N, y_k^N, z_k^N \right]^T
+\end{equation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+After computing $\aep$, we estimate $\boldsymbol{U}_{AEP}$ from (\ref{eq:feature-space-pca}) and set $\boldsymbol{M} = \boldsymbol{I}$. Reconstruction of a test vector of normals $\boldsymbol{x}$ is performed via
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{equation}\label{eq:aep-reconstruction}
+   \tilde{\boldsymbol{x}} = {\Phi_{AEP}}^{-1} \left( \boldsymbol{U}_{AEP} {\boldsymbol{U}_{AEP}}^T \Phi_{AEP}(\boldsymbol{x}) \right)
+\end{equation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+In \cite{RefWorks:90}, $\boldsymbol{U}_{AEP}$ has been used as a prior to perform facial shape-from-shading.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{PGA Kernel}\label{subsec:pga-kernel}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Principal geodesic analysis (PGA) \cite{RefWorks:100,RefWorks:86} replaces the linear subspace normally created by PCA by a geodesic manifold. PGA can be used to represent geodesic distances on the surface on any manifold, however, we focus on its use on 2-spheres. This means that every principal component in PGA on 2-spheres represents a great circle. The \textit{extrinsic mean}, as described by Pennec \cite{RefWorks:101}, calculated for PCA does not represent an accurate distance on the manifold. Therefore, we choose to use the \textit{intrinsic mean} defined by the Riemannian distance between two points, $d(\circ,\circ)$. Assuming a set of data points $\boldsymbol{x}$ on embedded on a 2-sphere, $S^2$, we can define the intrinsic mean as $\mu = {\arg\min}_{\boldsymbol{x} \in S^2} \sum_i^K d(\boldsymbol{x}, \boldsymbol{x}_i)$.
+
+Two important operators for the 2-sphere manifold are the logarithmic and exponential maps. Given a point on the surface of a sphere and the normal $\boldsymbol{n}$ at that point, we can define a plane tangent to the sphere at $\boldsymbol{n}$. If we then have a vector $\boldsymbol{v}$, that points to another point on the tangent plane, we can define the exponential map, $Exp_{\boldsymbol{n}}$, as the point on the sphere that is distance $\norm{\boldsymbol{v}}$ along the geodesic in the direction of $\boldsymbol{v}$ from $\boldsymbol{n}$. The logarithmic map, $Log_{\boldsymbol{n}}$ is the inverse of the exponential map. Given a point on the surface of the sphere it returns the corresponding point on the tangent plane at $n$. Given the definition of the logarithmic map, we can define the Riemannian distance for a 2-sphere as $d(\boldsymbol{n}, \boldsymbol{v}) = \norm{Log_{\boldsymbol{n}}(\boldsymbol{v})}$. 
+
+However, as shown by Smith and Hancock in \cite{RefWorks:86}, PGA amounts to performing PCA on the vectors $Log_\mu(\boldsymbol{n}_k)$. Therefore, a kernel-based version of PGA has a mapping function equal to the logarithmic map and an inverse mapping function equal to the exponential map. Assuming we have pre-calculated the intrinsic means, $\mu^i$, we can explicitly define the PGA mapping function as 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{equation}\label{eq:pga-kernel}
+    \pga = \left[ Log_{\mu^1}(\boldsymbol{n}_k^1), \ldots, Log_{\mu^N}(\boldsymbol{n}_k^N) \right]^T
+\end{equation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+and the inverse mapping as 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{equation}\label{eq:inv-pga-kernel}
+    \invpga = \left[ Exp_{\mu^1}(\boldsymbol{v}_k^1), \ldots, Exp_{\mu^N}(\boldsymbol{v}_k^N) \right]^T
+\end{equation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+After computing $\pga$, we estimate $\boldsymbol{U}_{PGA}$ from (\ref{eq:feature-space-pca}) and set $\boldsymbol{M} = \boldsymbol{I}$. Reconstruction of a test vector of normals $\boldsymbol{x}$ is performed via
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{equation}\label{eq:pga-reconstruction}
+   \tilde{\boldsymbol{x}} = {\Phi_{PGA}}^{-1} \left( \boldsymbol{U}_{PGA} {\boldsymbol{U}_{PGA}}^T \Phi_{PGA}(\boldsymbol{x}) \right)
+\end{equation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+In \cite{RefWorks:86}, $\boldsymbol{U}_{PGA}$ has been used as a prior to perform facial shape-from-shading.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Spherical Cosine Kernel}\label{subsec:cosine-kernel}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+As described in Section~\ref{subsubsec:spherical-normals}, the distance between two normals can also be expressed in terms of spherical coordinates. Motivated by the recent findings on the robustness of the cosine kernel \cite{RefWorks:5, RefWorks:68} we wish to define a cosine-based kernel for use in KPCA. Given the fact that we have two angles, we create a kernel of the form:
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{equation}\label{eq:spher-cosine-kernel}
+    k(\boldsymbol{x}_i, \boldsymbol{x}_j) = \sum^K_k \cos(\Delta \phi^{ij}_k) + \sum^K_k \cos(\Delta \theta^{ij}_k)
+\end{equation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+where $\phi^{ij}_k$ and $\theta^{ij}_k$ are as defined in Equation~\ref{eq:normalised-spherical}. Explicitly, we define the spherical cosine kernel in terms of it's vector components
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{equation}
+    \begin{aligned}\label{eq:spher-kernel}
+        \spher = \left[
+                    \tilde{x}_k^1, \tilde{y}_k^1, \tilde{z}_k^1, \sqrt{1 - (\tilde{z}_k^1)^2}, \ldots, \right. \\
+                    \left. \tilde{x}_k^N, \tilde{y}_k^N, \tilde{z}_k^N, \sqrt{1 - (\tilde{z}_k^N)^2}
+                \right]^T
+    \end{aligned}
+\end{equation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+The inverse mapping, where we convert from a feature space vector of the form $\boldsymbol{x}_k \in \R^F = [\tilde{x}_k^1, \tilde{y}_k^1, \tilde{z}_k^1, \tilde{sz}_k^1, \ldots]^T$ back to input space, is given as:
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{equation}\label{eq:inv-spher-kernel}
+    \invspher = \left[ g (\rho_k^1, \psi_k^1), \ldots, g (\rho_k^N, \psi_k^N) \right]^T
+\end{equation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+where 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{equation}
+    \begin{aligned}\label{eq:inv-spher-g}
+        &\rho_k^i = \arctan [ \frac{\tilde{y}_k^i}{\sqrt{(\tilde{x}_k^i)^2 + (\tilde{y}_k^i)^2}} / \frac{\tilde{x}_k^i}{\sqrt{(\tilde{x}_k^i)^2 + (\tilde{y}_k^i)^2}} ] \\
+        &\psi_k^i = \arctan [ \frac{\tilde{sz}_k^i}{\sqrt{(\tilde{z}_k^i)^2 + (\tilde{sz}_k^i)^2}} / \frac{\tilde{z}_k^i}{\sqrt{(\tilde{z}_k^i)^2 + (\tilde{sz}_k^i)^2}} ] \\
+        &g(\rho_k^i, \psi_k^i) = [\cos \psi_k^i \sin \rho_k^i, \sin \psi_k^i \sin \rho_k^i, \cos \psi_k^i]^T
+    \end{aligned}
+\end{equation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+After computing $\spher$, we estimate $\boldsymbol{U}_{SPHER}$ from (\ref{eq:feature-space-pca}) and set $\boldsymbol{M} = \boldsymbol{I}$. Reconstruction of a test vector of normals $\boldsymbol{x}$ is performed via
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{equation}\label{eq:spher-reconstruction}
+   \tilde{\boldsymbol{x}} = {\Phi_{SPHER}}^{-1} \left( \boldsymbol{U}_{SPHER} {\boldsymbol{U}_{SPHER}}^T \Phi_{SPHER}(\boldsymbol{x}) \right)
+\end{equation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -1,0 +1,10 @@
+\section{A Kernel-PCA framework for normals}\label{sec:kernel-pca-for-normals}
+Computing principal components on a subspace of normals is non-trivial due to the fact that normals exist as points lying on the surface of a 2-sphere. For this reason, it is claimed that linear statistical analysis techniques such as PCA cannot be performed directly on normals \footnote{In particular because the definition of a mean is not well defined in arbitrary dimensional spheres}. In order to alleviate this problem, mapping techniques from the unit sphere to an approximate Euclidean space have been proposed \cite{RefWorks:86,RefWorks:90,RefWorks:100}. The most popular proposed techniques are the Azimuthal Equidistant Projection (AEP) and Principal Geodesic Analysis (PGA).  However, in KPCA, we only need to define a kernel that provides an inner product between two vectors in a space. Following the properties of normals described in Section~\ref{sec:properties-of-normals}, we derive kernels for the existing AEP and PGA techniques and show the connection between the angular difference between normals and robust kernels.
+
+We maintain the notation outlined in Section~\ref{subsec:notation-normals} when defining our kernels. Once a vector, $\boldsymbol{x}_k$, has been mapped in to the feature space, we refer to the concatenated feature vectors as $\boldsymbol{v}_k$. The vector $\boldsymbol{v}_k$ will have as many components as the feature space requires.
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+\input{kpca}
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+\input{normal_kernels}
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+\input{gsfs}

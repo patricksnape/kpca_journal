@@ -1,0 +1,124 @@
+\section{Optimising The Spherical Correlation}\label{sec:spherical}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+In this section we show how (\ref{eq:minimise-least-squares}) can be optimised with respect to the motion parameters. As described in Subsection~\ref{subsec:spherical-corr}, we define two angles to represent our gradient orientation. These angles are described as  $\phi \triangleq \arctan \frac{\tildeg_y}{\tildeg_x}$, the azimuth angle, and the elevation angle, denoted by $\theta \triangleq \arccos \tildeg_z$. Given these relationships, we can define the least-squares minimization problem
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{equation}
+  \begin{aligned}\label{eq:ang-least-squares}
+    &  \argmax \sum_{k \in P} \cos [\Delta \phi (k)] + \sum_{k \in P} \cos [\Delta \theta (k)] \\
+    &\triangleq \argmin \sum_{k \in P} \Big[ 
+        \begin{pmatrix}
+            \cos{\phi_1} \\
+            \sin{\phi_1} \\
+            \cos{\theta_1} \\
+            \sin{\theta_1}
+        \end{pmatrix}
+        -
+        \begin{pmatrix}
+            \cos{\phi_2} \\
+            \sin{\phi_2} \\
+            \cos{\theta_2} \\
+            \sin{\theta_2}
+        \end{pmatrix}
+        \Big] ^2 \\
+    &\triangleq \argmin \sum_{k \in P} \Big[ 
+        \begin{pmatrix}
+            \tildeg_{1,x} \\ 
+            \tildeg_{1,y} \\ 
+            \tildeg_{1,z} \\ 
+            \sqrt{1 - \tildeg_{1,z}^2}
+        \end{pmatrix}
+        -
+        \begin{pmatrix}
+            \tildeg_{2,x} \\ 
+            \tildeg_{2,y} \\ 
+            \tildeg_{2,z} \\ 
+            \sqrt{1 - \tildeg_{2,z}^2}
+        \end{pmatrix}
+        \Big] ^2
+    \end{aligned}
+\end{equation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{The spherical inverse-compositional gradient correlation algorithm}\label{subsec:3danginvcomp}
+For the spherical inverse-compositional algorithm, we swap the roles of $\I_1$ and $\I_2$ and formulate the least-squares problem described in (\ref{eq:ang-least-squares})
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{equation}\label{eq:ang-minimization}
+    \sum_{k \in P} \Big[ 
+        \begin{pmatrix}
+            \tildeg_{2,x}[\p] \\ 
+            \tildeg_{2,y}[\p] \\ 
+            \tildeg_{2,z}[\p] \\ 
+            \sqrt{1 - \tildeg_{2,z}^2[\p]}
+        \end{pmatrix}
+        -
+        \begin{pmatrix}
+            \tildeg_{1,x}[\deltap] \\ 
+            \tildeg_{1,y}[\deltap] \\ 
+            \tildeg_{1,z}[\deltap] \\ 
+            \sqrt{1 - \tildeg_{1,z}^2[\deltap]}
+        \end{pmatrix}
+        \Big] ^2
+\end{equation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+$\I_2$ is then updated at each iteration using $\W(\x;\p) \leftarrow \W(\x;\p) \circ (\W(\x;\p))^{-1}$ where $\circ$ signifies composition. The derivation of the first Taylor expansion of (\ref{eq:ang-minimization}) is very similar to that of (\ref{eq:eucgyz}). Therefore, after applying the first Taylor expansion to each term and expanding the chain rule as in (\ref{eq:nablagx}), we arrive at
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{equation}
+  \begin{aligned}\label{eq:anggxyz}
+    &\tildeg_{1,x}[\deltap] \approx \tildeg_{1,x}[\zero] + \nabla_g (\g_{1,x}[\zero]) \nabla_p (\g_{1,x}[\zero]) \frac{\partial \W}{\partial \p} \deltap \\  
+    &\tildeg_{1,y}[\deltap] \approx \tildeg_{1,y}[\zero] + \nabla_g (\g_{1,y}[\zero]) \nabla_p (\g_{1,y}[\zero]) \frac{\partial \W}{\partial \p} \deltap \\
+    &\tildeg_{1,z}[\deltap] \approx \tildeg_{1,z}[\zero] + \nabla_g (\g_{1,z}[\zero]) \nabla_p (\g_{1,z}[\zero])  \frac{\partial \W}{\partial \p} \deltap \\
+    &\sqrt{1 - \tildeg_{1,z}^2[\deltap]} \approx \sqrt{1 - \tildeg_{1,z}^2[\zero]} + \\
+    & \hspace{30 mm} \nabla_g (\g_{1,sz}[\zero]) \nabla_p (\g_{1,z}[\zero])  \frac{\partial \W}{\partial \p} \deltap
+  \end{aligned}
+\end{equation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+where
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{equation}
+  \begin{aligned}\label{eq:spherical-chain-rule}
+    \nabla_g (\g_{1,x}[\zero]) &= \frac{\g_{1,y}^2[\zero]}{(\g_{1,x}^2[\zero] + \g_{1,y}^2[\zero] + \g_{1,z}^2[\zero])^{3/2}} \\
+    \nabla_g (\g_{1,y}[\zero]) &= \frac{\g_{1,x}^2[\zero]}{(\g_{1,x}^2[\zero] + \g_{1,y}^2[\zero] + \g_{1,z}^2[\zero])^{3/2}} \\
+    \nabla_g (\g_{1,z}[\zero]) &= \frac{\g_{1,x}^2[\zero] + \g_{1,y}^2[\zero]}{(\g_{1,x}^2[\zero] + \g_{1,y}^2[\zero] + \g_{1,z}^2[\zero])^{3/2}} \\
+    \nabla_g (\g_{1,sz}[\zero]) &= \frac{-(\g_{1,x}[\zero] ( \frac{\g_{1,y}^2[\zero] + \g_{1,z}^2[\zero]}{\g_{1,x}^2[\zero] + \g_{1,y}^2[\zero] + \g_{1,z}^2[\zero]})^{3/2})}{\g_{1,y}^2[\zero] + \g_{1,z}^2[\zero]}
+  \end{aligned}
+\end{equation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+and
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{equation}
+  \begin{aligned}\label{eq:spherical-second-order-derivs}
+    \nabla_p (\g_{1,x}[\zero]) &= [ \g_{1,xx}[\zero](k) \; \g_{1,xy}[\zero](k) \; \g_{1,xz}[\zero](k) ] \\
+    \nabla_p (\g_{1,y}[\zero]) &= [ \g_{1,yx}[\zero](k) \; \g_{1,yy}[\zero](k) \; \g_{1,yz}[\zero](k) ] \\
+    \nabla_p (\g_{1,z}[\zero]) &= [ \g_{1,zx}[\zero](k) \; \g_{1,zy}[\zero](k) \; \g_{1,zz}[\zero](k) ] \\
+  \end{aligned}
+\end{equation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+We can then solve the least squares problem from (\ref{eq:ang-minimization}) in terms of $\deltap$. We first define $\nabla \GOne$ as the vector
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{equation}\label{eq:spherical-nabla-g1}
+    \nabla \GOne = \begin{pmatrix}
+                         \nabla_g (\g_{1,x}[\zero]) \nabla_p (\g_{1,x}[\zero]) \\
+                         \nabla_g (\g_{1,y}[\zero]) \nabla_p (\g_{1,y}[\zero]) \\
+                         \nabla_g (\g_{1,z}[\zero]) \nabla_p (\g_{1,z}[\zero]) \\
+                         \nabla_g (\g_{1,z}[\zero]) \nabla_p (\g_{1,sz}[\zero])
+                    \end{pmatrix}
+\end{equation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+and $\GOne$ and $\GTwo$ as the the corresponding parts of the residual defined in (\ref{eq:ang-minimization}). Performing a first order Taylor expansion to (\ref{eq:ang-minimization}) gives
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{equation}\label{eq:spherical-first-order-expansion}
+    \sum_{k \in P} \Big[ \GTwo(k) + \nabla \GOne \frac{\partial \W}{\partial \p} \Delta \p - \GOne(k) \Big]^2
+\end{equation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+We can then rearrange (\ref{eq:spherical-first-order-expansion}) to form the equation
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{equation}\label{eq:spherical-delta-p}
+    \deltap = \boldsymbol{H}^{-1} \sum_k \Big[ \nabla \GOne \frac{\partial \W}{\partial \p} \Big]^T [\GTwo(k) - \GOne(k)]
+\end{equation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+where $\boldsymbol{H}$ is the Hessian matrix defined by
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{equation}\label{eq:spherical-hessian}
+    \boldsymbol{H} = \sum_k \Big[ \nabla \GOne \frac{\partial \W}{\partial \p} \Big]^T \Big[ \nabla \GOne \frac{\partial \W}{\partial \p} \Big]
+\end{equation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

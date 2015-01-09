@@ -1,0 +1,49 @@
+\subsection{Kernel PCA}\label{sec:kpca}
+Given a set of, $K$, $F$-dimensional data vectors stacked in a matrix $ \boldsymbol{X} = [\boldsymbol{x}_1, \ldots, \boldsymbol{x}_K] \in \R^F$, we assume the existence of a positive semi-definite kernel function $k(\circ, \circ) : \R^F \times \R^F \rightarrow \R$. Given that $k(\circ, \circ)$ is positive semi-definite we can use it to define the inner product in an arbitrary dimensional Hilbert space, $\hilbert$, which we will call the feature space. There then exists an implicit mapping, $\Phi$, from the input space $\R^F$ to the feature space, $\hilbert$:
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{equation}
+    \begin{aligned}\label{eq:implicit-map}
+        \Phi : \R^F \rightarrow \hilbert, \; \; \boldsymbol{x} \rightarrow \Phi(\boldsymbol{x})
+    \end{aligned}
+\end{equation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Due to the often implicit nature of the mapping $\Phi$, we need only the kernel function since $\langle \Phi(\boldsymbol{x}_i), \Phi(\boldsymbol{x}_j) \rangle  = k (\boldsymbol{x}_i, \boldsymbol{x}_j)$, the so-called kernel trick. Now, component analysis within the feature space is equivalent to
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{equation}
+    \begin{aligned}\label{eq:feature-space-pca}
+        \underset{\boldsymbol{U}_\Phi}{\arg\max} \; \boldsymbol{U}_\Phi^T \bar{\boldsymbol{X}}_\Phi \bar{\boldsymbol{X}}_\Phi^T \boldsymbol{U}_\Phi \qquad \text{s.t.} \; \boldsymbol{U}_\Phi^T \boldsymbol{U}_\Phi = \boldsymbol{I}
+    \end{aligned}
+\end{equation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+where $\boldsymbol{U}_\Phi = [\boldsymbol{U}_\Phi^1, ..., \boldsymbol{U}_\Phi^P] \in \hilbert$, $\boldsymbol{m}_\Phi = \frac{1}{K} \sum \limits_{i=1}^K \Phi(\boldsymbol{x_i})$ and $\bar{\boldsymbol{X}}_\Phi = [\Phi(\boldsymbol{x_i}) - \boldsymbol{m}_\Phi, ..., \Phi(\boldsymbol{x_K}) - \boldsymbol{m}_\Phi]$.
+
+By noting that $\boldsymbol{\bar{X}}_\Phi \boldsymbol{\bar{X}}_\Phi^T = (\boldsymbol{X}_\Phi \boldsymbol{M}) (\boldsymbol{X}_\Phi \boldsymbol{M})^T$, where $\boldsymbol{M} = \boldsymbol{I} - \frac{1}{K} \boldsymbol{1} \boldsymbol{1}^T$ and $\boldsymbol{1}$ represents a vector of ones, we can find $\boldsymbol{U}_\Phi$ by performing eigenanalysis on $\bar{\boldsymbol{X}}_\Phi^T \bar{\boldsymbol{X}}_\Phi$. Therefore,
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{equation}
+    \begin{aligned}\label{eq:x-bar-corr}
+        \boldsymbol{\bar{X}}_\Phi^T \boldsymbol{\bar{X}}_\Phi = \boldsymbol{V} \boldsymbol{\Lambda} \boldsymbol{V}^T \boldsymbol{U}_{\Phi} &= \boldsymbol{\bar{X}}_\Phi^T \boldsymbol{V} \boldsymbol{\Lambda}^{-\frac{1}{2}}
+    \end{aligned}
+\end{equation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Though $\boldsymbol{U}_\Phi$ can be defined, it cannot be calculated explicitly. However, we can compute the KPCA-transformed feature vector $\boldsymbol{\tilde{y}} = [\boldsymbol{y}_1, ..., \boldsymbol{y}_K]$ by:
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{equation}
+    \begin{aligned}\label{eq:projections}
+        \boldsymbol{\tilde{y}} = \boldsymbol{U}_\Phi^T \Phi(\boldsymbol{y}) &= \boldsymbol{\Lambda}^{-\frac{1}{2}} \boldsymbol{V}^T \boldsymbol{\bar{X}}_\Phi^T \Phi(\boldsymbol{y}) \\
+        &= \boldsymbol{\Lambda}^{-\frac{1}{2}} \boldsymbol{V}^T \boldsymbol{M} \boldsymbol{X}_\Phi^T \Phi(\boldsymbol{y})
+    \end{aligned}
+\end{equation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+We can, therefore, define the projection in terms of the kernel function
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{equation}\label{eq:kernel-vector}
+        \boldsymbol{X}_\Phi^T \Phi(\boldsymbol{y}) = \left[ k(\boldsymbol{y}_1, \boldsymbol{x}_1), \ldots, k(\boldsymbol{y}_K, \boldsymbol{x}_K) \right]^T
+\end{equation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Reconstruction of a vector can be performed by
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{equation}\label{eq:vector-reconstruction}
+        \boldsymbol{\tilde{X}} = {\Phi}^{-1} \left( \boldsymbol{U}_{\Phi} {\boldsymbol{U}_{\Phi}}^T (\Phi(\boldsymbol{x}) - \boldsymbol{m}_{\Phi}) + \boldsymbol{m}_{\Phi} \right)
+\end{equation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Unfortunately, since ${\Phi}^{-1}$ rarely exists or is extremely expensive to compute, performing reconstruction using (\ref{eq:vector-reconstruction}) is not generally feasible. In these cases, reconstruction can be performed by means of pre-images \cite{RefWorks:254}. However, in the case of the kernels we propose for normals, ${\Phi}^{-1}$ does exist and explicit mapping between the space of normals and kernel space is performed. Finally, we should note here that in the general KPCA framework it is not necessary to subtract the mean. In this case, KPCA can be seen in the perspective of metric multi-dimensional scaling \cite{RefWorks:253}.

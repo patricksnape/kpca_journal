@@ -1,0 +1,43 @@
+\def\kdeltak{k + \Delta k_x}
+\newcommand{\IPartial}[1]{\frac{\partial I(k)}{\partial #1}}
+\newcommand{\BPartialM}[1]{B(k) \frac{\partial M (k)}{\partial #1}}
+\newcommand{\PartialM}[1]{\frac{\partial M (k)}{\partial #1}}
+
+\section{Robustness Against Bias Fields}\label{sec:robustness}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+In this section we provide a formal proof of the robustness of our cost functions to bias field corruption. Consider an image signal $M$ with no intensity inhomogeneities and a smooth signal $B$, representing a multiplicative bias field. We assume $B$ to be constant within a small neighbourhood, $N(k) = \left( \Delta k_x \Delta k_y \Delta k_z \right)$. Therefore, for $\Delta k_x$, we have
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{equation}
+    \begin{aligned}\label{eq:robust-I}
+        I(k) &= M(k) B(k) \\
+        I(\kdeltak) &= M(\kdeltak) B(\kdeltak)
+    \end{aligned}
+\end{equation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+and given that $B$ is constant within $N$
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{equation}
+    \begin{aligned}\label{eq:robust-dIdx}
+        \frac{\partial I(k)}{\partial x} &\approx \lim_{\Delta k_x \to 0} \frac{I(\kdeltak) - I(k)}{\Delta k} \\
+        &\approx \lim_{\Delta k_x \to 0} \frac{B(k) (M(\kdeltak) - M(k))}{\Delta k} \\
+        &= B(k) \frac{\partial M(k)}{\partial x}
+    \end{aligned}
+\end{equation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Using (\ref{eq:robust-dIdx}), we show our proposed cost function to be robust to locally constant bias fields, since
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{equation}
+    \begin{aligned}\label{eq:robust-cost-function}
+        &\frac{\IPartial{x}}{\sqrt{(\IPartial{x})^2 + (\IPartial{y})^2 + (\IPartial{y})^2}} \\
+        &\approx \frac{\BPartialM{x}}{\sqrt{(\BPartialM{x})^2 + (\BPartialM{y})^2 + (\BPartialM{y})^2}} \\
+        &\approx \frac{\PartialM{x}}{\sqrt{(\PartialM{x})^2 + (\PartialM{y})^2 + (\PartialM{y})^2}}
+    \end{aligned}
+\end{equation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Equations (\ref{eq:robust-I})-(\ref{eq:robust-cost-function}) are analogous for $\Delta k_y$ and  $\Delta k_z$. Therefore,
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{equation}\label{eq:robust-image}
+        \frac{\Delta I(k)}{\norm{\Delta I(k)}} \approx \frac{\Delta M(k)}{\norm{\Delta M(k)}}
+\end{equation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+which demonstrates the invariance of our cost functions with respect to $B$.

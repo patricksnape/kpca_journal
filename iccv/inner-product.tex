@@ -1,0 +1,161 @@
+\section{Optimising The Inner Product Correlation}\label{sec:inner-product}
+In this section we focus on how the correlation of (\ref{eq:inner-product-cosine}) can be optimised in order retrieve the motion parameters. The motion parameters, $\p$, can be estimated by maximising
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{equation}
+  \begin{aligned}\label{eq:eucq}
+    q &= \sum \limits_{k \in P} \cos [\phi (k)] \\
+      &= \sum \limits_{k \in P} \tildeg_{1,x}(k)\tildeg_{2,x}(k) + \tildeg_{1,y}(k)\tildeg_{2,y}(k) + \tildeg_{1,z}(k)\tildeg_{2,z}(k)
+  \end{aligned}
+\end{equation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+However, a first order Taylor expansion of either $\tildeg_1$ or $\tildeg_2$ with respect to $\deltap$ results in a linear function of $\deltap$. In order to avoid the computation of the second order Taylor expansion, we take the approach outlined by \cite{RefWorks:59} and normalise the cost function according to $\tildeg_2$. This yields a cost function of the form
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{equation}
+  \begin{aligned}\label{eq:eucqg2}
+    q &= \frac{\sum \limits_{k \in P} \tildeg_{1,x}(k)\tildeg_{2,x}(k) + \tildeg_{1,y}(k)\tildeg_{2,y}(k) + \tildeg_{1,z}(k)\tildeg_{2,z}(k)}{\sqrt{\sum \limits_{k \in P} \tildeg_{2,x}^2(k) + \tildeg_{2,y}^2(k) + \tildeg_{2,z}^2(k)}} \\
+      &= \frac{\tildeg_{1,x}^T \tildeg_{2,x} + \tildeg_{1,y}^T \tildeg_{2,y} + \tildeg_{1,z}^T \tildeg_{2,z}}{\sqrt{\tildeg_{2,x}^T \tildeg_{2,x} + \tildeg_{2,y}^T \tildeg_{2,y} + \tildeg_{2,z}^T \tildeg_{2,z}}}
+  \end{aligned}
+\end{equation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+where, if we linearize $\tildeg_2$, we have a non-linear function of $\deltap$. We can then maximise $q$ with respect to $\p$ by assuming a current estimate of $\p$ is known and looking for an increment $\deltap$ that maximises (\ref{eq:eucqg2}).
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{The inner product inverse-compositional gradient correlation algorithm}\label{subsec:3deucinvcomp}
+We choose to provide the derivation of the inverse-compositional form of the algorithm, due to the pre-computable nature of the Hessian in this form. However, a forward-additive version of the algorithm would be simple to implement following a similar logic.
+
+For the inverse-compositional algorithm, we swap the roles of $\I_1$ and $\I_2$ and the cost function is defined as
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% WITH NOTATION
+%\begin{equation}\label{eq:eucinvcomp}
+%    q = \frac{(\tildeg_{2,x}[p])^T (\tildeg_{1,x}[\deltap])+ (\tildeg_{2,y}[p])^T (\tildeg_{1,y}[\deltap]) + (\tildeg_{2,z}[p])^T (\tildeg_{1,z}[\deltap])}{\sqrt{(\tildeg_{1,x}[\deltap])^T (\tildeg_{1,x}[\deltap]) +(\tildeg_{1,y}[\deltap])^T (\tildeg_{1,y}[\deltap]) + (\tildeg_{1,z}[\deltap])^T (\tildeg_{1,z}[\deltap])}}
+%\end{equation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{equation}\label{eq:eucinvcomp}
+    q = \frac{\tildeg_{2,x}^T \tildeg_{1,x} + \tildeg_{2,y}^T \tildeg_{1,y} + \tildeg_{2,z}^T \tildeg_{1,z}}{\sqrt{\tildeg_{1,x}^T \tildeg_{1,x} + \tildeg_{1,y}^T \tildeg_{1,y} + \tildeg_{1,z}^T \tildeg_{1,z})}}
+\end{equation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+where $\tildeg_1$ has a dependency on $\deltap$ and $\tildeg_2$ has a dependency on $\p$, which have been omitted for notational simplicity.
+
+$\I_2$ is then updated at each iteration using the compositional update $\W(\x;\p) \leftarrow \W(\x;\p) \circ (\W(\x;\p))^{-1}$. It is also assumed that $\W(\x;\zero) = \x$ and thus the Taylor expansion is performed around zero. The derivation is split in to separate entities for each dimension, $x$, $y$ and $z$. The first Taylor expansion on $\tildeg_{1,x}[\p + \deltap]$ produces
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{equation}\label{eq:eucgx}
+    \tildeg_{1,x}[\deltap] \approx \tildeg_{1,x}[\zero] + \nabla \tildeg_{1,x}[\zero] \deltap
+\end{equation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+By the chain rule we can decompose $\nabla \tildeg_{1,x}[\zero]$ in to
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{equation}
+  \begin{aligned}\label{eq:nablagx}
+    \nabla \tildeg_{1,x}[\zero] &= \frac{\partial \tildeg_{1,x}[\p]}{\partial \p}\Big|_{p=0} \\
+                              &= \frac{\partial f(\g_{1,x}[\p])}{\partial \g_{1,x}[\p]} \; \frac{\partial \g_{1,x}[\p]}{\partial \p}\Big|_{\p=0}
+  \end{aligned}
+\end{equation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+We provide the derivation for (\ref{eq:nablagx}) as follows:
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{equation}
+  \begin{aligned}\label{eq:derivefgx}
+    \frac{\partial f(\g_{1,x}[\p])}{\partial \g_{1,x}[\p]}\Big|_{\p=0} &= \frac{\partial \frac{\g_{1,x}[\p]}{\sqrt{\g_{1,x}^2[\p] + \g_{1,y}^2[\p] + \g_{1,z}^2[\p]}}}{\partial \g_{1,x}[\p]}\Bigg|_{\p=0} \\
+     &= \frac{\g_{1,y}^2[\zero] + \g_{1,z}[\zero]^2}{(\g_{1,x}^2[\zero] + \g_{1,y}^2[\zero] + \g_{1,z}^2[\zero])^{3/2}}
+  \end{aligned}
+\end{equation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{equation}\label{eq:derivegxp}
+    \frac{\partial \g_{1,x}[\p]}{\partial \p}\Big|_{\p=0} = [ \g_{1,xx}[\zero](k) \; \g_{1,xy}[\zero](k) \; \g_{1,xz}[\zero](k) ] \frac{\partial \W}{\partial \p}
+\end{equation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Where the result from (\ref{eq:derivegxp}) is as described by Equation (12) of \cite{RefWorks:6}. To simplify the expressions, we define a function $f(a,b)$, such that
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{equation}\label{eq:f-simplify}
+    f(a,b) = \frac{\g_{1,a}^2 + \g_{1,b}^2}{(\g_{1,x}^2 + \g_{1,y}^2 + \g_{1,z}^2)^{3/2}}
+\end{equation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Therefore, we define $\tildeg_{1,x}[\deltap]$, $\tildeg_{1,y}[\deltap]$ and $\tildeg_{1,z}[\deltap]$ as
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{equation}
+  \begin{aligned}\label{eq:eucgyz}
+    \tildeg_{1,x}[\deltap] &\approx \tildeg_{1,x}[\zero] + f(y,z)[\zero] \; \nabla \g_{1,x}[\zero] \frac{\partial \W}{\partial \p} \deltap \\  
+    \tildeg_{1,y}[\deltap] &\approx \tildeg_{1,y}[\zero] + f(x,z)[\zero] \; \nabla \g_{1,y}[\zero] \frac{\partial \W}{\partial \p} \deltap \\
+    \tildeg_{1,z}[\deltap] &\approx \tildeg_{1,z}[\zero] + f(x,y)[\zero] \; \nabla \g_{1,z}[\zero] \frac{\partial \W}{\partial \p} \deltap
+  \end{aligned}
+\end{equation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ and
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{equation}
+  \begin{aligned}\label{eq:euc-second-order-derivs}
+    \nabla \g_{1,x}[\zero] &= [ \g_{1,xx}[\zero](k) \; \g_{1,xy}[\zero](k) \; \g_{1,xz}[\zero](k) ] \\
+    \nabla \g_{1,y}[\zero] &= [ \g_{1,yx}[\zero](k) \; \g_{1,yy}[\zero](k) \; \g_{1,yz}[\zero](k) ] \\
+    \nabla \g_{1,z}[\zero] &= [ \g_{1,zx}[\zero](k) \; \g_{1,zy}[\zero](k) \; \g_{1,zz}[\zero](k) ]
+  \end{aligned}
+\end{equation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Equations (\ref{eq:eucgyz}) and (\ref{eq:eucgx}) can be plugged in to (\ref{eq:eucqg2}) to arrive at the cost function $q(\deltap)$. In the formulae below, the dependencies on $[\zero]$ and $[\deltap]$ are dropped for notational simplicity. The numerator is as follows
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{equation}
+  \begin{aligned}\label{eq:q_dp_num}
+    q(\deltap) &= \tildeg_{2,x}^T (\tildeg_{1,x} + \nabla \tildeg_{1,x} \deltap) + \tildeg_{2,y}^T (\tildeg_{1,y} + \nabla \tildeg_{1,y} \deltap) \\
+    & \hspace{4 mm} + \tildeg_{2,z}^T (\tildeg_{1,z} + \nabla \tildeg_{1,z} \deltap) \\
+    &= \tildeg_{2,x}^T \tildeg_{1,x} + \tildeg_{2,y}^T \tildeg_{1,y} + \tildeg_{2,z}^T \tildeg_{1,z} \\     
+    & \hspace{4 mm} + \left( \tildeg_{2,x}^T \nabla \tildeg_{1,x} + \tildeg_{2,y}^T \nabla \tildeg_{1,y} + \tildeg_{2,z}^T \nabla \tildeg_{1,z} \right) \deltap \\
+    %&= [\tildeg_{2,x} \; \tildeg_{2,y} \; \tildeg_{2,z}]^T [\tildeg_{1,x} \; \tildeg_{1,y} \; \tildeg_{1,z}] + [\tildeg_{2,x} \; \tildeg_{2,y} \; \tildeg_{2,z}]^T [\nabla \tildeg_{1,x} \; \nabla \tildeg_{1,y} \; \nabla \tildeg_{1,z}] \deltap \\
+    &= q_p + \GTwo^T \J \deltap
+  \end{aligned}
+\end{equation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+where $\J = \left[ \nabla \tildeg_{2,x} \; \nabla \tildeg_{2,y} \; \nabla \tildeg_{2,z} \right]^T$ as described in (\ref{eq:nablagx})-(\ref{eq:derivegxp}) and $\GTwo = \left[ \tildeg_{2,x} \; \tildeg_{2,y} \; \tildeg_{2,z} \right]^T$. The denominator is defined as
+\begin{equation}
+  \begin{aligned}\label{eq:q_dp_denom}
+    q(\deltap) &= \left( (\tildeg_{1,x} + \nabla \tildeg_{1,x} \deltap)^T (\tildeg_{1,x} + \nabla \tildeg_{1,x} \deltap) + \right. \\
+    & \hspace{6 mm} \left. (\tildeg_{1,y} + \nabla \tildeg_{1,y} \deltap)^T (\tildeg_{1,y} + \nabla \tildeg_{1,y} \deltap) + \right. \\
+    & \hspace{5 mm} \left. (\tildeg_{1,z} + \nabla \tildeg_{1,z} \deltap)^T (\tildeg_{1,z} + \nabla \tildeg_{1,z} \deltap) \right)^{1/2} \\
+    %&= \left( \sum_k (\tildeg_{1,x} + \nabla \tildeg_{1,x} \deltap)^2 + (\tildeg_{1,y} + \nabla \tildeg_{1,y} \deltap)^2 + \\
+    %& \hspace{12 mm} (\tildeg_{1,z} + \nabla \tildeg_{1,z} \deltap)^2 \right)^{1/2} \\
+    &= \left( \sum_k \tildeg^2_{1,x} + \tildeg^2_{1,y} + \tildeg^2_{1,z} + 2 \; \tildeg_{1,x} \nabla \tildeg_{1,x} \deltap + \right. \\
+    & \hspace{4 mm} \left. 2 \; \tildeg_{1,y} \nabla \tildeg_{1,y} \deltap + 2 \; \tildeg_{1,z} \nabla \tildeg_{1,z} \deltap + \right. \\
+    & \hspace{4 mm} \left. \vphantom{\sum_k} (\nabla \tildeg_{1,x} \deltap)^2 + (\nabla \tildeg_{1,y} \deltap)^2 +(\nabla \tildeg_{1,z} \deltap)^2 \right)^{1/2} \\
+    &= \sqrt{\norm{\GOne}^2 + 2 \GOne^T \J \deltap + \deltap^T \J^T \J \deltap}
+  \end{aligned}
+\end{equation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+We can then combine (\ref{eq:q_dp_num}) and (\ref{eq:q_dp_denom}) together to form the cost function
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{equation}\label{eq:q_dp}
+    q(\deltap) = \frac{q_p + \GTwo^T \J \deltap}{\sqrt{\norm{\GOne}^2 + 2 \GOne^T \J \deltap + \deltap^T \J^T \J \deltap}}
+\end{equation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+where $\GOne = \left[ \tildeg_{1,x} \; \tildeg_{1,y} \; \tildeg_{1,z} \right]^T$. Finally, we maximise (\ref{eq:q_dp}) as in \cite{RefWorks:59} We first note that we have a cost function of the form
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{equation*}
+    f(x) = \frac{u + \boldsymbol{u}\boldsymbol{x}}{\sqrt{v + 2 \boldsymbol{v}^T \boldsymbol{x} + \boldsymbol{x}^T  \boldsymbol{Q} \boldsymbol{x}}}
+\end{equation*}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+and we can therefore derive two different maxima. 
+
+\textbf{(Case 1)} $u > \boldsymbol{u}^T \boldsymbol{Q}^{-1} \boldsymbol{v}$: Here we have a maximum of $x$ which is attainable from the equation
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{equation}\label{eq:case1}
+    x = \boldsymbol{Q}^{-1} \left( \frac{v - \boldsymbol{v}^T  \boldsymbol{Q}^{-1} \boldsymbol{v}}{u - \boldsymbol{u}^T \boldsymbol{Q}^{-1} \boldsymbol{v}} \boldsymbol{u} - \boldsymbol{v} \right)
+\end{equation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\textbf{(Case 2)} $u \le \boldsymbol{u}^T \boldsymbol{Q}^{-1} \boldsymbol{v}$ : Here we have a maximum of $x$ which is attainable from the equation
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{equation}\label{eq:case2}
+    x = \boldsymbol{Q}^{-1} \left( \lambda \boldsymbol{u} - \boldsymbol{v} \right)
+\end{equation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+where $\lambda$ can have the possible values of
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{equation}\label{eq:lambda}
+    \lambda_1 = \sqrt{\frac{\boldsymbol{v}^T \boldsymbol{Q}^{-1} \boldsymbol{v}}{\boldsymbol{u}^T \boldsymbol{Q}^{-1} \boldsymbol{u}}} \qquad \lambda_2 = \frac{\boldsymbol{u}^T \boldsymbol{Q}^{-1} \boldsymbol{v} - \boldsymbol{u}^T \boldsymbol{v}}{\boldsymbol{u}^T \boldsymbol{Q}^{-1} \boldsymbol{u}}
+\end{equation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Equation~(\ref{eq:case2}) should only be used when the denominator is negative and thus we are not close to the optimum solution. In this case we are unlikely to ever reach the optimum value and so we choose to use Equation~(\ref{eq:case1}) to calculate our maximum. Through matching of terms between (\ref{eq:case1}) and (\ref{eq:q_dp}) we arrive at
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{equation}\label{eq:max_deltap}
+    \deltap = (\J^T \J)^{-1} \J^T \left( \frac{\norm{\GOne}^2 - \GOne^T \boldsymbol{P_G} \GOne}{\GTwo^T \GOne - \GTwo^T \boldsymbol{P_G} \GOne} \GTwo - \GOne \right)
+\end{equation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+where $\boldsymbol{P_G} \triangleq \J (\J^T \J)^{-1} \J^T$ and $\boldsymbol{P_G}$ is an orthogonal projection operator.

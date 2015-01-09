@@ -1,0 +1,29 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Geometric Shape-from-shading}\label{subsec:gsfs}
+Shape-from-shading (SFS) is the name given to algorithms that attempt to recover a representation of shape from the pixel intensities of an image. The most challenging subset of these algorithms concentrate on recovering shape from an image illuminated by a known single point light source and known reflectance behaviour. The most commonly assumed reflectance behaviour is lambertian reflectance, which assumes the following relationship between the intrinsic shape of an object and the intensity of the light reflected from it
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{equation}\label{eq:lambertian-reflectance}
+    E = \rho (\boldsymbol{n} \cdot \boldsymbol{s})
+\end{equation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+where $\boldsymbol{n}$ is the normal of the surface at the point of reflectance, $\boldsymbol{s}$ is the light direction and $\rho$ is the albedo. Lambertian reflectance assumes that an object exhibits ideal diffuse reflectivity, and so the albedo term represents a reflectivity coefficient. Even if given the albedo and light direction, (\ref{eq:lambertian-reflectance}) is still under-constrained. Many techniques have been proposed to solve SFS \cite{RefWorks:249, RefWorks:225, RefWorks:270}, and the majority concentrate on recovering some representation of the surface normal, as given by (\ref{eq:lambertian-reflectance}).
+
+Geometric shape-from-shading (GSFS) is the name given by Smith and Hancock to their SFS algorithm for statistical reconstruction of facial needle-maps \cite{RefWorks:86, RefWorks:90}. Although we have chosen to place all KPCA kernels within this algorithm, we would stress that this is merely to provide a practical demonstration of the power of the proposed kernel component analysis. The use of a statistical prior, however, does produce superior results when compared to state-of-the-art SFS techniques that have no prior knowledge of object shape.
+
+GSFS extends the SFS algorithm given by Worthington and Hancock \cite{RefWorks:252} to include a statistical prior on needle-maps. The algorithm is simple to compute and produces results that are visually appealing and guaranteed to represent the space of faces. They initialise the needle-map by assuming global convexity, and then proceed to iterate by first reconstructing the normals using the PCA model and then enforcing the hard-irradiance constraint. The hard-irradiance constraint is enforced by rotating the potentially off-cone reconstructed surface normal back onto the reflectance cone specified by the light direction and intensity of a given pixel. An overview of the algorithm is given in Algorithm~\ref{alg:gsfs}. We augment the original GSFS algorithm by replacing the statistical reconstruction step with each of the previously defined kernels.
+
+To recover a depthmap from the recovered set of normals requires an integration step. However, as discussed in \cite{RefWorks:281}, there are a number of ways that this integration can be performed. We have chosen to use the elegant technique proposed by Frankot and Chellappa \cite{RefWorks:99} due to its efficiency and the quality of its reconstruction.
+
+\alglanguage{pseudocode}
+\begin{algorithm}[ht]
+    \caption{{\sc Geometric shape-from-shading}}
+    \label{alg:gsfs}
+        \begin{algorithmic}
+            \Statex{Iterate until $\sum_{i,j} \arccos \left({\boldsymbol{n}(i, j)}' \cdot {\boldsymbol{n}(i, j)}'' \right) < \epsilon$:}
+            \Statex \hspace{\algorithmicindent} (1) Calculate an initial estimate of the surface normals.
+            \Statex \hspace{\algorithmicindent} (2) Project the needle-map into the feature space using one of the kernels defined in Section~\ref{sec:kernel-pca-for-normals}: $\Phi_{F}(\boldsymbol{x})$
+            \Statex \hspace{\algorithmicindent} (3) Reconstruct the best fit feature space vector: $\boldsymbol{U}_{F} {\boldsymbol{U}_{F}}^T \Phi_{F}(\boldsymbol{x})$.
+            \Statex \hspace{\algorithmicindent} (4) Use the inverse mapping to recreate a set of surface normals, ${x}' = {\Phi_{F}}^{-1} \left( \boldsymbol{U}_{F} {\boldsymbol{U}_{F}}^T \Phi_{F}(\boldsymbol{x}) \right)$, with individual normals ${\boldsymbol{n}(i, j)}'$
+            \Statex \hspace{\algorithmicindent} (5) Enforce hard-irradiance constraint on the reconstructed normals to find the on-cone surface normal, ${\boldsymbol{n}(i, j)}''$.
+        \end{algorithmic}
+\end{algorithm}

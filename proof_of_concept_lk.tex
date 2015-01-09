@@ -1,0 +1,160 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Proof of concept: Robust LK cost functions}\label{sec:proof-of-concept-lk}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+The original forward additive $\ltwo$ LK algorithm \cite{RefWorks:71,RefWorks:10} seeks to minimise the SSD between a given template image and an input image by minimising the sum of the squared pixel differences:
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{equation}\label{eq:l2-lk-fa}
+    \argmin_{\p} \norm{I(\p) - T(\zero)}^2
+\end{equation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+where $T(\zero)$ is the unwarped reference template image. Due to the non-linear nature of (\ref{eq:l2-lk-fa}) with respect to $\p$, (\ref{eq:l2-lk-fa}) is linearised by taking the first order Taylor series expansion. By iteratively solving for some small $\Delta \p$ update to $\p$, the objective function becomes
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{equation}\label{eq:l2-lk-linearised-fa}
+    \argmin_{\p} \norm{I(\p) + \nabla I \frac{\partial \mathcal{W}}{\partial \p} \Delta \p - T(\zero)}^2
+\end{equation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+where $\nabla I$ is the gradient over each dimension of $I(\zero)$ warped into the frame of $T$ by the current warp estimate $\mathcal{W}(\boldsymbol{x};\p)$.  $\frac{\partial \mathcal{W}}{\partial \p}$ is the Jacobian of the warp and represents the first order partial derivatives of the warp with respect to each parameter. $\nabla I \frac{\partial \mathcal{W}}{\partial \p}$ is commonly referred to as the steepest descent images. We will express the steepest descent images as $\frac{\partial I(\p)}{\partial \p}$. Equation~\ref{eq:l2-lk-linearised-fa} is now solvable by assuming the gauss-newton approximation to the Hessian, $\boldsymbol{H} = \left[ {\frac{\partial I(\p)}{\partial \p}}^T \frac{\partial I(\p)}{\partial \p} \right]$:
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{equation}\label{eq:l2-lk-gauss-newton-fa}
+    \Delta \p = \boldsymbol{H}^{-1} \frac{\partial I(\p)}{\partial \p}^T \left[ T(\zero) - I(\p) \right]
+\end{equation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Equation~\ref{eq:l2-lk-gauss-newton-fa} can then be solved by iteratively updating $\p \leftarrow \p + \Delta \p$ until convergence.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{ECC LK Fitting}\label{subsec:lk-ecc}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+The ECC measure, proposed by Evangelidis and Psarakis \cite{RefWorks:59}, seeks to be invariant to illumination variations within the input and template image. This is done by suppressing the magnitude of each pixel through normalisation. In \cite{RefWorks:59}, they proved that maximisation of
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{equation}\label{eq:ecc-lk-max}
+   \argmax_{\p} \frac{I(\p)^T T(\zero)}{\norm{I(\p)} \norm{T(\zero)}}
+\end{equation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+is equivalent to minimisation of
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{equation}\label{eq:ecc-lk-min}
+    \argmin_{\p} \left \lVert \frac{I(\p)}{\norm{I(\p)}} - \frac{T(\zero)}{\norm{T(\zero)}} \right \rVert^2
+\end{equation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Assuming a delta update as before and linearising in a similar manner to (\ref{eq:l2-lk-linearised-fa}) results in
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{equation}\label{eq:ecc-lk-linearised}
+    \argmin_{\p} \hat{T} \frac{I(\p) + \frac{\partial I(\p)}{\partial \p} \Delta \p}{\norm{{I(\p) + \frac{\partial I(\p)}{\partial \p} \Delta \p}}}
+\end{equation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+where $\hat{T} = \frac{T(\zero)}{\norm{T(\zero)}}$.
+Evangelidis and Psarakis \cite{RefWorks:59} give a very comprehensive proof of the upper bound of Equation~\ref{eq:ecc-lk-linearised}, which yields the following solution for $\Delta \p$
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{equation}\label{eq:ecc-lk-gauss-newton-fa}
+    \Delta \p = \boldsymbol{H}^{-1} \frac{\partial I(\p)}{\partial \p}^{\top} \left[ \frac{\norm{I(\p)}^2 - I(\p)^{\top} \boldsymbol{Q} I(\p)}{\hat{T}^{\top} I(\p) - \hat{T}^{\top} \boldsymbol{Q} I(\p)} \hat{T} - I(\p) \right]
+\end{equation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+where $Q$ is an orthogonal projection operator on the Jacobian, $\J = \frac{\partial I(\p)}{\partial \p}$, defined as $\boldsymbol{Q} = \J (\J^\top \J)^{-1} \J^\top$.
+
+In fact, the $\Delta p$ update given in \cite{RefWorks:59} is more complex than (\ref{eq:ecc-lk-gauss-newton-fa}), as it seeks to find an upper bound on the correlation between the two images. However, in the case where (\ref{eq:ecc-lk-gauss-newton-fa}) does not apply, it is unlikely that the algorithm is unable to recover and so we choose to concentrate on the provided solution.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Inverse Compositional LK}\label{subsec:lk-ic}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+The inverse compositional algorithm, proposed by Baker and Matthews \cite{RefWorks:74}, performs a compositional update of the warp and linearises over the template rather than the input image. Linearisation of the template image causes the gradient in the steepest descent images term to become fixed. The compositional update of the warp assumes linearisation of the term $\frac{\partial \mathcal{W}(\boldsymbol{x};\zero)}{\partial \p}$, which is also fixed. Therefore, the entire Jacobian term, and by extension the Hessian matrix, are also fixed. Similar to the $\ltwo$ SSD algorithm described above
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{equation}\label{eq:l2-lk-ic}
+    \argmin_{\p} \norm{T(\Delta \p) - I(\p)}^2
+\end{equation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+where we notice that the roles of the template and input image have been swapped. Assuming an inverse compositional update to the warp, $\mathcal{W}(\boldsymbol{x};\p) \leftarrow \mathcal{W}(\boldsymbol{x};\p) \circ \mathcal{W}(\boldsymbol{x};\Delta \p)^{-1}$ and linearisaton around the template
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{equation}\label{eq:l2-lk-linearised-ic}
+    \argmin_{\p} \norm{I(\p) - \frac{\partial T(\zero)}{\partial \p} \Delta \p - T(\zero)}^2
+\end{equation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Solving for $\Delta \p$ is identical to (\ref{eq:l2-lk-gauss-newton-fa}), except the Jacobian and Hessian have been pre-computed
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{equation}\label{eq:l2-lk-gauss-newton-ic}
+    \Delta \p = \boldsymbol{H}^{-1} \frac{\partial T(\zero)}{\partial \p}^T \left[ I(\p) - T(\zero) \right]
+\end{equation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+The ECC can also be described as an inverse compositional algorithm, by performing the same update to the warp and simply swapping the roles of the template and reference image. In short, solving ECC in the inverse compositional case becomes
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{equation}\label{eq:ecc-lk-gauss-newton-ic}
+    \Delta \p = \boldsymbol{H}^{-1} \frac{\partial T(\zero)}{\partial \p}^{\top} \left[ \frac{\norm{\hat{T}}^2 - \hat{T}^{\top} \boldsymbol{Q} \hat{T}}{I(\p)^{\top} \hat{T} - I(\p)^{\top} \boldsymbol{Q} \hat{T}} I(\p) - \hat{T} \right]
+\end{equation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+where $\boldsymbol{Q}$ is as before, except $\J = \frac{\partial T(\zero)}{\partial \p}$. Any term involving $\hat{T}$ is fixed and pre-computable, so the reduction of calculations per-iteration is substantial.
+
+It is worth noting that not every family of warps is suitable for the inverse compositional approach. The warp must belong to a family that forms a group, and the identity warp must exist in the set of possible warps. For more complex warps, such as piecewise affine and thin plate spline warping, approximations to the inverse compositional updates have been proposed \cite{RefWorks:227, RefWorks:277}.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Inner Product ECC LK}\label{subsec:lk-inner-product}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Combining the inner product relationship between normals, as described in Equation~\ref{eq:cosine-inner-product} with the ECC objective function yields a robust objective function for depth maps. By defining $G_I$ and $G_T$ as the normals computed from the input and template depth maps respectively, we can define the following forwards additive objective function
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{equation}\label{eq:ip-ecc-lk-max}
+   \argmax_{\p} \frac{G_I(\zero)^{\top} G_T(\p)}{\norm{G_I(\zero)} \norm{G_T(\p)}}
+\end{equation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+and following the same logic as in (\ref{eq:ecc-lk-min}), we can minimise (\ref{eq:ip-ecc-lk-max}) as
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{equation}\label{eq:ip-ecc-lk-min}
+   \argmin_{\p} \left \lVert \frac{G_I(\p)}{\norm{G_I(\p)}} - \frac{G_T(\zero)}{\norm{G_T(\zero)}} \right \rVert^2
+\end{equation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+However, $G_I(\p)$ and $G_T(\zero)$ are formed of the concatenated components of all the normals within the needle-maps. Therefore, when linearising $G_I$, care must be taken to treat each component separately. Since $G_I$ is composed of multiple components, there will be extra derivatives to calculate via the chain rule. Formally, linearising (\ref{eq:ip-ecc-lk-min}) with respect to $G_I$ yields
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{equation}\label{eq:ip-ecc-lk-linearised}
+    \argmin_{\p} \hat{G_T} \frac{G_I(\p) + \boldsymbol{J}_G \Delta \p}{\norm{{G_I(\p) + \boldsymbol{J}_G \Delta \p}}}
+\end{equation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+where $\boldsymbol{J}_G$ is the matrix formed by correctly computing the derivative of $G_I$ with respect to each component of $G_I$. For example, given that $G_{I,x}(\p)$ is a vector formed of the $x$-components of the normals in the input needle-map and $\hat{G}_{I,x}(\p) = \frac{G_{I,x}(\p)}{\norm{G_I(\p)}}$, the true derivative of $\hat{G}_{I,x}(\p)$ is
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{equation}\label{eq:ip-ecc-chain-rule}
+    \begin{aligned}
+        \frac{\partial \hat{G}_{I,x}(\p)}{\partial \p}          &= \frac{\partial \hat{G}_{I,x}(\p)}{\partial G_{I,x}(\p)} \frac{\partial G_{I,x}(\p)}{\partial \p} \\
+        \frac{\partial \hat{G}_{I,x}(\p)}{\partial G_{I,x}(\p)} &= \frac{G_{I,y}(\p)^2 + G_{I,z}(\p)^2}{\left(G_{I,x}(\p)^2 + G_{I,y}(\p)^2 + G_{I,z}(\p)^2 \right)^{\sfrac{3}{2}}}
+    \end{aligned}
+\end{equation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+where $\frac{\partial G_{I,x}(\p)}{\partial \p}$ is equivalent to $\frac{\partial I(\p)}{\partial \p}$ in the depth domain. However, $\nabla G_{I,x}$ inside $\frac{\partial G_{I,x}(\p)}{\partial \p} = \nabla G_{I,x} \frac{\partial \mathcal{W}}{\partial \p}$ represents the gradient over only the $x$-component of the needle-map, and is equivalent to the second order derivative of the depth map with respect to $x$. 
+
+Since $\frac{\partial G_{I,x}(\p)}{\partial \p}$ is a matrix and $\frac{\partial \hat{G}_{I,x}(\p)}{\partial G_{I,x}(\p)}$ is a vector, we multiply the two using a hadamard product. However, $\frac{\partial \hat{G}_{I,x}(\p)}{\partial G_{I,x}(\p)}$ must first form a matrix, $\boldsymbol{J}_x$, of size $D \times p$ by repeating the vector $p$ to form the columns. Finally the total $x$-component Jacobian is given by $\boldsymbol{J}_{G,x} = \boldsymbol{J}_x \odot \frac{\partial G_{I,x}(\p)}{\partial \p}$.
+
+Given that $\boldsymbol{J}_{G,i} \forall i \in \left\{ x,y,z \right\}$ have been calculated, the total derivative term is given by $\boldsymbol{J}_G = \left[ \boldsymbol{J}_{G,x}, \boldsymbol{J}_{G,y}, \boldsymbol{J}_{G,z} \right]^T$. Solving for $\Delta \p$ is now identical to the ECC formulation:
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{equation}\label{eq:ip-ecc-lk-gauss-newton-ic}
+    \Delta \p = \boldsymbol{H}^{-1} \boldsymbol{J}_G^{\top} \left[ \frac{\norm{\hat{G_T}}^2 - \hat{G_T}^{\top} \boldsymbol{Q} \hat{G_T}}{G_I(\p)^{\top} \hat{G_T} - G_I(\p)^{\top} \boldsymbol{Q} \hat{G_T}} G_I(\p) - \hat{G_T} \right]
+\end{equation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+where $\hat{G_T} = \frac{G_T}{\norm{G_T}}$. Since the update step is identical to the one given in (\ref{eq:ecc-lk-gauss-newton-ic}) it is trivial to reformulate the inner product ECC in an inverse compositional form by following a derivation identical to Section~\ref{subsec:lk-ic}.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Spherical SSD LK}\label{subsec:lk-spherical}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+In contrast to the inner product derivation in the previous section, the spherical representation of normals requires the optimisation of two separate cosine correlations. In theory, it would be possible to solve for each cosine separately in the same way the inner product objective function is defined. However, in the interest of solving a single objective function, we use the relationship defined by Equation~\ref{eq:minimise-spherical}. For notational simplicity, let $\tilde{sz} = \sqrt{1 - \tilde{z}^2}$. Therefore, we define our forward additive objective function as
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{equation}\label{eq:spher-ssd}
+    \argmin_{\p} \norm{\tilde{G}_I(\p) - \tilde{G}_T(\zero)}^2
+\end{equation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+where $\tilde{G}_I(\p) = \left[  \tilde{x}_I(\p), \tilde{y}_I(\p), \tilde{z}_I(\p), \tilde{sz}_I(\p) \right]^T$ and $\tilde{G}_T(\zero) = \left[ \tilde{x}_T(\zero), \tilde{y}_T(\zero), \tilde{z}_T(\zero), \tilde{sz}_T(\zero) \right]^T$, the concatenated vectors of each normalised component.
+
+Similar to the derivation in Section~\ref{subsec:lk-inner-product}, the Jacobian must be taken over each component and thus linearising around $\tilde{G}_I(\p)$ yields
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{equation}\label{eq:spher-ssd-linearised}
+    \argmin_{\p} \norm{\tilde{G}_I(\p) + \tilde{\boldsymbol{J}}_G \Delta \p - \tilde{G}_T(\zero)}^2
+\end{equation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+where $\tilde{\boldsymbol{J}}_G = \left[ \tilde{\boldsymbol{J}}_{G,x}, \tilde{\boldsymbol{J}}_{G,y}, \tilde{\boldsymbol{J}}_{G,z}, \tilde{\boldsymbol{J}}_{G,sz} \right]^T$. Unlike in Section~\ref{subsec:lk-inner-product}, the calculation of each Jacobian is not identical due to the different normalisation procedure taken for each component. Given that $\boldsymbol{J}_{G,x} = \boldsymbol{J}_x \odot \frac{\partial G_{I,x}(\p)}{\partial \p}$ and $\boldsymbol{J}_x$ is as described previously, we give the derivation of each $\boldsymbol{J}_i \forall i \in \left\{ x,y,z,sz \right\}$ as:
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{equation}\label{eq:spher-ssd-chain-rule}
+    \begin{aligned}
+        \boldsymbol{J}_x    &= \frac{G_{I,y}(\p)^2}{\left(G_{I,x}(\p)^2 + G_{I,y}(\p)^2 + G_{I,z}(\p)^2 \right)^{\sfrac{3}{2}}} \\
+        \boldsymbol{J}_y    &= \frac{G_{I,x}(\p)^2}{\left(G_{I,x}(\p)^2 + G_{I,y}(\p)^2 + G_{I,z}(\p)^2 \right)^{\sfrac{3}{2}}} \\
+        \boldsymbol{J}_z    &= \frac{G_{I,x}(\p)^2 + G_{I,y}(\p)^2}{\left(G_{I,x}(\p)^2 + G_{I,y}(\p)^2 + G_{I,z}(\p)^2 \right)^{\sfrac{3}{2}}} \\
+        \boldsymbol{J}_{sz} &= - \frac{G_{I,z}(\p) \left( \frac{G_{I,x}(\p)^2 + G_{I,y}(\p)^2}{G_{I,x}(\p)^2 + G_{I,y}(\p)^2 + G_{I,z}(\p)^2} \right)^{\sfrac{3}{2}}}{G_{I,x}(\p)^2 + G_{I,y}(\p)^2}
+    \end{aligned}
+\end{equation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Now, given the definitons of the correct Jacobians per component, we can solve (\ref{eq:spher-ssd-linearised}) as:
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{equation}\label{eq:spher-ssd-gauss-newton}
+    \Delta \p = \boldsymbol{H}^{-1} \tilde{\boldsymbol{J}}_G^T \left[ \tilde{G}_T(\zero) - \tilde{G}_I(\p) \right]
+\end{equation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Given that the update in (\ref{eq:spher-ssd-gauss-newton}) is identical to that of (\ref{eq:l2-lk-gauss-newton-fa}), it would be trivial to formulate an inverse compositional form of this residual by following the steps described in Section~\ref{subsec:lk-ic}.
